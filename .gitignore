@@ -2,3 +2,4 @@ WiredTiger.lock
 Mongodb
 node_modules
 .env
+user_images

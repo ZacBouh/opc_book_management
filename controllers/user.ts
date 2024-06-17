@@ -2,7 +2,7 @@ import { User } from "../models/user";
 import bcrypt from "bcrypt";
 import { Response } from "express";
 import "dotenv/config";
-import { generateAccessToken } from "../utils/security";
+import { generateAccessToken } from "../middlewares/auth";
 
 export function createUser(email: string, password: string, res: Response) {
   if (!email || !password) {
@@ -48,6 +48,7 @@ export function loginUser(email: string, password: string, res: Response) {
           res.status(401).json({ message: "wrong password" });
         }
         console.log(`${email} successfully logged in`);
+        console.log("user id is : ", user._id);
         res.status(200).json({
           userId: user._id.toString(),
           token: generateAccessToken(user._id.toString()),

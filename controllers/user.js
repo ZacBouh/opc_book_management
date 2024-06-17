@@ -7,7 +7,7 @@ exports.getUsers = exports.loginUser = exports.createUser = void 0;
 const user_1 = require("../models/user");
 const bcrypt_1 = __importDefault(require("bcrypt"));
 require("dotenv/config");
-const security_1 = require("../utils/security");
+const auth_1 = require("../middlewares/auth");
 function createUser(email, password, res) {
     if (!email || !password) {
         res.status(400).json({ message: "a user email and password is required" });
@@ -51,9 +51,10 @@ function loginUser(email, password, res) {
                 res.status(401).json({ message: "wrong password" });
             }
             console.log(`${email} successfully logged in`);
+            console.log("user id is : ", user._id);
             res.status(200).json({
                 userId: user._id.toString(),
-                token: (0, security_1.generateAccessToken)(user._id.toString()),
+                token: (0, auth_1.generateAccessToken)(user._id.toString()),
             });
         });
     }, (err) => {

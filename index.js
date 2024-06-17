@@ -6,27 +6,39 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const mongoose_1 = __importDefault(require("mongoose"));
 const user_1 = require("./controllers/user");
+require("dotenv/config");
+const cors_1 = __importDefault(require("cors"));
 const app = (0, express_1.default)();
-const port = 3000;
-mongoose_1.default.connect("mongodb://127.0.0.1:27017/?directConnection=true&serverSelectionTimeoutMS=2000&appName=mongosh+2.2.6").then(() => console.log('successfull connection to db')).catch((er) => console.log('error connecting to db', er));
+const port = 4000;
+mongoose_1.default
+    .connect(`mongodb+srv://${process.env.DB_USERNAME}:${process.env.DB_PASSWORD}${process.env.DB_ADDRESS}`)
+    .then(() => console.log("successfull connection to db test"))
+    .catch((er) => console.log("error connecting to db", er));
+app.use((0, cors_1.default)({
+    origin: "http://localhost:3000",
+    optionsSuccessStatus: 200,
+}));
 app.use(express_1.default.json());
 // app.use(express.urlencoded({extended : true}))
-app.get('/', (req, res) => {
-    res.send('Hello it works');
+app.get("/", (req, res) => {
+    res.send("Hello it works");
 });
-app.post('/api/auth/signup', (req, res) => {
+app.post("/api/auth/signup", (req, res) => {
     var _a, _b;
     console.log(`sign up request received with ${(_a = req.body) === null || _a === void 0 ? void 0 : _a.email} and ${(_b = req.body) === null || _b === void 0 ? void 0 : _b.password}`);
     (0, user_1.createUser)(req.body.email, req.body.password, res);
 });
-app.post('/api/auth/login', (req, res) => {
+app.post("/api/auth/login", (req, res) => {
+    var _a, _b, _c, _d;
+    console.log(`login request received with ${(_a = req.body) === null || _a === void 0 ? void 0 : _a.email} and ${(_b = req.body) === null || _b === void 0 ? void 0 : _b.password}`);
+    (0, user_1.loginUser)((_c = req.body) === null || _c === void 0 ? void 0 : _c.email, (_d = req.body) === null || _d === void 0 ? void 0 : _d.password, res);
 });
-app.get('/api/auth/users', (req, res) => {
-    console.log('request for users');
+app.get("/api/auth/users", (req, res) => {
+    console.log("request for users");
     const getRequest = (0, user_1.getUsers)();
     getRequest
         .then((users) => res.status(201).json(users))
-        .catch(error => res.status(400).json(error));
+        .catch((error) => res.status(400).json(error));
 });
-app.listen(port, () => console.log(`listening on port ${port} is ok
+app.listen(port, () => console.log(`listening on port ${port}
 `));

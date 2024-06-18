@@ -7,6 +7,7 @@ import {
   createBook,
   deleteBook,
   updateBook,
+  rateBook,
 } from "./controllers/books";
 import { authenticateToken } from "./middlewares/auth";
 import { uploadBookImage } from "./middlewares/fileStorage";
@@ -32,6 +33,10 @@ app.use(
 
 app.use(express.json());
 // app.use(express.urlencoded({extended : true}))
+app.use((req, res, next) => {
+  console.log("[REQUEST] received");
+  next();
+});
 
 app.get("/", (req, res) => {
   res.send("Hello it works");
@@ -52,6 +57,8 @@ app.delete("/api/books/:bookId", authenticateToken, deleteBook);
 app.post("/api/books", authenticateToken, uploadBookImage, createBook);
 
 app.put("/api/books/:bookId", authenticateToken, uploadBookImage, updateBook);
+
+app.post("/api/books/:bookId/rating", authenticateToken, rateBook);
 
 /* AUTH ROUTES */
 
@@ -75,3 +82,8 @@ app.listen(port, () =>
   console.log(`listening on port ${port}
 `)
 );
+
+// setInterval(
+//   () => console.log("server still up", new Date(Date.now()).toLocaleString()),
+//   5000
+// );

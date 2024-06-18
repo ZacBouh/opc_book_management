@@ -18,6 +18,7 @@ export function authenticateToken(
   res: Response,
   next: NextFunction
 ) {
+  console.log("[AUTH] request received");
   const authHeader = req.get("authorization");
   const token = authHeader?.split(" ")[1];
 

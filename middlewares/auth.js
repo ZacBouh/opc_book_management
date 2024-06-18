@@ -13,6 +13,7 @@ function generateAccessToken(userId) {
 }
 exports.generateAccessToken = generateAccessToken;
 function authenticateToken(req, res, next) {
+    console.log("[AUTH] request received");
     const authHeader = req.get("authorization");
     const token = authHeader === null || authHeader === void 0 ? void 0 : authHeader.split(" ")[1];
     if (token == null) {

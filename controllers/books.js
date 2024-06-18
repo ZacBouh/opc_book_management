@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.updateBook = exports.deleteBook = exports.createBook = exports.getBook = exports.getBooks = void 0;
+exports.rateBook = exports.updateBook = exports.deleteBook = exports.createBook = exports.getBook = exports.getBooks = void 0;
 const book_1 = require("../models/book");
 const imageStorage_1 = require("../utils/imageStorage");
 const fs_1 = __importDefault(require("fs"));
@@ -25,8 +25,10 @@ function getBooks(res) {
 exports.getBooks = getBooks;
 function getBook(req, res) {
     const bookId = req.params.bookId;
-    if (bookId === "bestrating")
+    if (bookId === "bestrating") {
+        book_1.Book.find().then((book) => res.status(200).json(book));
         return console.log("[NOT IMPLEMENTED] request for best ratings");
+    }
     console.log("book with id ", bookId, " requested");
     book_1.Book.findOne({ _id: bookId }).then((book) => {
         if (book == null)
@@ -43,8 +45,11 @@ function createBook(req, res) {
         return res.status(400).json("book information missing");
     if (!req.file)
         return res.status(400).json("image file missing");
+    console.log("[CREATE] request received with ", req.body);
     try {
-        book_1.Book.create(Object.assign(Object.assign({}, JSON.parse(req.body.book)), { ratings: [], imageUrl: (0, imageStorage_1.getImageUrl)(req) })).then(() => res.status(201).json({ message: "book successfully created" }), (err) => {
+        book_1.Book.create(Object.assign(Object.assign({}, JSON.parse(req.body.book)), { 
+            // ratings: [],
+            imageUrl: (0, imageStorage_1.getImageUrl)(req) })).then(() => res.status(201).json({ message: "book successfully created" }), (err) => {
             console.log("[ERROR] create book request promise rejected ", err);
             res.status(400).json(err);
         });
@@ -124,3 +129,32 @@ function updateBook(req, res) {
     }
 }
 exports.updateBook = updateBook;
+function rateBook(req, res) {
+    const bookId = req.params.bookId;
+    try {
+        book_1.Book.findById(bookId).then((book) => {
+            if (!book) {
+                res.status(400).json("no book found with this Id");
+                console.log("[ERROR no book found with this Id");
+                return;
+            }
+            book_1.Book.findOneAndUpdate({ _id: bookId }, {
+                ratings: [...book.ratings, Object.assign(Object.assign({}, req.body), { grade: req.body.rating })],
+            }, { new: true }).then((updatedBook) => {
+                if (!updatedBook)
+                    throw new Error("server did not aknowledge the update operation");
+                console.log(`[UPDATE] successfully added rating to book ${bookId} `, req.body);
+                res.status(201).json(updatedBook);
+            }, (err) => {
+                console.log(`[ERROR] could not update rating `, err);
+            });
+        }, (err) => {
+            throw new Error(err);
+        });
+    }
+    catch (err) {
+        console.log(`[ERROR] could not update book rating `, err);
+        res.status(500).json(err);
+    }
+}
+exports.rateBook = rateBook;

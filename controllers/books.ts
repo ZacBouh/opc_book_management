@@ -26,8 +26,11 @@ export function getBooks(res: Response) {
 export function getBook(req: Request, res: Response) {
   const bookId = req.params.bookId;
 
-  if (bookId === "bestrating")
+  if (bookId === "bestrating") {
+    Book.find().then((book) => res.status(200).json(book));
+
     return console.log("[NOT IMPLEMENTED] request for best ratings");
+  }
 
   console.log("book with id ", bookId, " requested");
 
@@ -47,10 +50,11 @@ export function getBook(req: Request, res: Response) {
 export function createBook(req: Request, res: Response) {
   if (!req.body.book) return res.status(400).json("book information missing");
   if (!req.file) return res.status(400).json("image file missing");
+  console.log("[CREATE] request received with ", req.body);
   try {
     Book.create({
       ...JSON.parse(req.body.book),
-      ratings: [],
+      // ratings: [],
       imageUrl: getImageUrl(req),
     }).then(
       () => res.status(201).json({ message: "book successfully created" }),
@@ -149,6 +153,49 @@ export function updateBook(req: AuthorizedRequest, res: Response) {
     );
   } catch (err) {
     console.log(`[ERROR] could not update book ${bookId} `, err);
+    res.status(500).json(err);
+  }
+}
+
+export function rateBook(req: AuthorizedRequest, res: Response) {
+  const bookId = req.params.bookId;
+
+  try {
+    Book.findById(bookId).then(
+      (book) => {
+        if (!book) {
+          res.status(400).json("no book found with this Id");
+          console.log("[ERROR no book found with this Id");
+          return;
+        }
+
+        Book.findOneAndUpdate(
+          { _id: bookId },
+          {
+            ratings: [...book.ratings, { ...req.body, grade: req.body.rating }],
+          },
+          { new: true }
+        ).then(
+          (updatedBook) => {
+            if (!updatedBook)
+              throw new Error("server did not aknowledge the update operation");
+            console.log(
+              `[UPDATE] successfully added rating to book ${bookId} `,
+              req.body
+            );
+            res.status(201).json(updatedBook);
+          },
+          (err) => {
+            console.log(`[ERROR] could not update rating `, err);
+          }
+        );
+      },
+      (err) => {
+        throw new Error(err);
+      }
+    );
+  } catch (err) {
+    console.log(`[ERROR] could not update book rating `, err);
     res.status(500).json(err);
   }
 }

@@ -23,6 +23,10 @@ app.use((0, cors_1.default)({
 }));
 app.use(express_1.default.json());
 // app.use(express.urlencoded({extended : true}))
+app.use((req, res, next) => {
+    console.log("[REQUEST] received");
+    next();
+});
 app.get("/", (req, res) => {
     res.send("Hello it works");
 });
@@ -34,6 +38,7 @@ app.get("/api/books/:bookId", books_1.getBook);
 app.delete("/api/books/:bookId", auth_1.authenticateToken, books_1.deleteBook);
 app.post("/api/books", auth_1.authenticateToken, fileStorage_1.uploadBookImage, books_1.createBook);
 app.put("/api/books/:bookId", auth_1.authenticateToken, fileStorage_1.uploadBookImage, books_1.updateBook);
+app.post("/api/books/:bookId/rating", auth_1.authenticateToken, books_1.rateBook);
 /* AUTH ROUTES */
 app.post("/api/auth/signup", (req, res) => {
     (0, user_1.createUser)(req.body.email, req.body.password, res);
@@ -51,3 +56,7 @@ app.post("/api/auth/login", (req, res) => {
 // });
 app.listen(port, () => console.log(`listening on port ${port}
 `));
+// setInterval(
+//   () => console.log("server still up", new Date(Date.now()).toLocaleString()),
+//   5000
+// );

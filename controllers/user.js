@@ -22,7 +22,9 @@ function createUser(email, password, res) {
             const newUser = new user_1.User({ email, password: hash });
             newUser
                 .save()
-                .then(() => res.status(201).json({ message: "user created" }))
+                .then(() => res.status(201).json({ message: "user created" }), (err) => {
+                res.status(400).json(err);
+            })
                 .catch((err) => res.status(500).json(err));
         });
     }

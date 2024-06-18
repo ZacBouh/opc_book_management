@@ -1,7 +1,9 @@
 import { Request, Response } from "express";
 import { Book } from "../models/book";
+import { getImagePath, getImageUrl } from "../utils/imageStorage";
 import path from "path";
 import fs from "fs";
+import { AuthorizedRequest } from "../middlewares/auth";
 
 export function getBooks(res: Response) {
   try {
@@ -24,6 +26,9 @@ export function getBooks(res: Response) {
 export function getBook(req: Request, res: Response) {
   const bookId = req.params.bookId;
 
+  if (bookId === "bestrating")
+    return console.log("[NOT IMPLEMENTED] request for best ratings");
+
   console.log("book with id ", bookId, " requested");
 
   Book.findOne({ _id: bookId }).then(
@@ -45,8 +50,8 @@ export function createBook(req: Request, res: Response) {
   try {
     Book.create({
       ...JSON.parse(req.body.book),
-      imageUrl:
-        "http://" + req.get("host") + "/" + path.basename(req.file.path),
+      ratings: [],
+      imageUrl: getImageUrl(req),
     }).then(
       () => res.status(201).json({ message: "book successfully created" }),
       (err) => {
@@ -60,7 +65,7 @@ export function createBook(req: Request, res: Response) {
   }
 }
 
-export function deleteBook(req: Request, res: Response) {
+export function deleteBook(req: AuthorizedRequest, res: Response) {
   const bookId = req.params.bookId;
 
   try {
@@ -71,12 +76,9 @@ export function deleteBook(req: Request, res: Response) {
             .status(200)
             .json({ message: "no book found with this id" });
 
-        const imagePath =
-          (process.env.PICTURES_FOLDER_PATH as string) +
-          "\\" +
-          path.basename(book.imageUrl);
+        const imagePath = getImagePath(book.imageUrl);
 
-        Book.deleteOne({ _id: bookId }).then(
+        Book.deleteOne({ _id: bookId, userId: req.userId?.userId }).then(
           () => {
             res.status(200).json({ message: "book deleted" });
             fs.unlink(imagePath, (err) => {
@@ -98,6 +100,55 @@ export function deleteBook(req: Request, res: Response) {
     );
   } catch (err) {
     console.log("[ERROR] error deleting booki", err);
+    res.status(500).json(err);
+  }
+}
+
+export function updateBook(req: AuthorizedRequest, res: Response) {
+  const bookId = req.params.bookId;
+  let updateContent: any;
+
+  try {
+    if (req.body.title) {
+      updateContent = req.body;
+    } else {
+      updateContent = {
+        ...JSON.parse(req.body.book),
+        imageUrl: getImageUrl(req),
+      };
+    }
+    console.log("[UPDATE] update content is ", updateContent);
+    Book.findOneAndUpdate(
+      { _id: bookId, userId: req.userId?.userId },
+      updateContent
+    ).then(
+      (previousDocument) => {
+        if (previousDocument === null)
+          throw new Error(
+            `DB did not aknowledge document update for book ${bookId}`
+          );
+        console.log(
+          `successfully updated book ${bookId} with content `,
+          updateContent
+        );
+        res
+          .status(201)
+          .json({ message: "successfully updated book with content " });
+        if (req.body.book) {
+          fs.unlink(getImagePath(previousDocument.imageUrl), (err) => {
+            if (err)
+              console.log(`[ERROR] could not remove previous image 
+                ${getImagePath(previousDocument.imageUrl)}              
+              `);
+          });
+        }
+      },
+      (err) => {
+        throw new Error(err);
+      }
+    );
+  } catch (err) {
+    console.log(`[ERROR] could not update book ${bookId} `, err);
     res.status(500).json(err);
   }
 }

@@ -1,5 +1,5 @@
 import multer from "multer";
-import { authorizedRequest } from "./auth";
+import { AuthorizedRequest } from "./auth";
 import { JwtPayload } from "jsonwebtoken";
 import "dotenv/config";
 
@@ -8,9 +8,9 @@ const storage = multer.diskStorage({
     cb(null, process.env.PICTURES_FOLDER_PATH as string);
   },
   filename: (req, file, cb) => {
-    const userId = ((req as authorizedRequest).userId as JwtPayload).userId;
+    const userId = ((req as AuthorizedRequest).userId as JwtPayload).userId;
 
-    const uniquePrefix = Date.now() + "_" + userId + "_" + file.fieldname;
+    const uniquePrefix = Date.now() + "_" + userId + "_";
     cb(null, uniquePrefix + file.originalname);
   },
 });

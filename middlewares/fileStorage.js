@@ -12,7 +12,7 @@ const storage = multer_1.default.diskStorage({
     },
     filename: (req, file, cb) => {
         const userId = req.userId.userId;
-        const uniquePrefix = Date.now() + "_" + userId + "_" + file.fieldname;
+        const uniquePrefix = Date.now() + "_" + userId + "_";
         cb(null, uniquePrefix + file.originalname);
     },
 });

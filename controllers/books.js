@@ -3,9 +3,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deleteBook = exports.createBook = exports.getBook = exports.getBooks = void 0;
+exports.updateBook = exports.deleteBook = exports.createBook = exports.getBook = exports.getBooks = void 0;
 const book_1 = require("../models/book");
-const path_1 = __importDefault(require("path"));
+const imageStorage_1 = require("../utils/imageStorage");
 const fs_1 = __importDefault(require("fs"));
 function getBooks(res) {
     try {
@@ -25,6 +25,8 @@ function getBooks(res) {
 exports.getBooks = getBooks;
 function getBook(req, res) {
     const bookId = req.params.bookId;
+    if (bookId === "bestrating")
+        return console.log("[NOT IMPLEMENTED] request for best ratings");
     console.log("book with id ", bookId, " requested");
     book_1.Book.findOne({ _id: bookId }).then((book) => {
         if (book == null)
@@ -42,7 +44,7 @@ function createBook(req, res) {
     if (!req.file)
         return res.status(400).json("image file missing");
     try {
-        book_1.Book.create(Object.assign(Object.assign({}, JSON.parse(req.body.book)), { imageUrl: "http://" + req.get("host") + "/" + path_1.default.basename(req.file.path) })).then(() => res.status(201).json({ message: "book successfully created" }), (err) => {
+        book_1.Book.create(Object.assign(Object.assign({}, JSON.parse(req.body.book)), { ratings: [], imageUrl: (0, imageStorage_1.getImageUrl)(req) })).then(() => res.status(201).json({ message: "book successfully created" }), (err) => {
             console.log("[ERROR] create book request promise rejected ", err);
             res.status(400).json(err);
         });
@@ -57,14 +59,13 @@ function deleteBook(req, res) {
     const bookId = req.params.bookId;
     try {
         book_1.Book.findById(bookId).then((book) => {
+            var _a;
             if (!book)
                 return res
                     .status(200)
                     .json({ message: "no book found with this id" });
-            const imagePath = process.env.PICTURES_FOLDER_PATH +
-                "\\" +
-                path_1.default.basename(book.imageUrl);
-            book_1.Book.deleteOne({ _id: bookId }).then(() => {
+            const imagePath = (0, imageStorage_1.getImagePath)(book.imageUrl);
+            book_1.Book.deleteOne({ _id: bookId, userId: (_a = req.userId) === null || _a === void 0 ? void 0 : _a.userId }).then(() => {
                 res.status(200).json({ message: "book deleted" });
                 fs_1.default.unlink(imagePath, (err) => {
                     if (err)
@@ -86,3 +87,40 @@ function deleteBook(req, res) {
     }
 }
 exports.deleteBook = deleteBook;
+function updateBook(req, res) {
+    var _a;
+    const bookId = req.params.bookId;
+    let updateContent;
+    try {
+        if (req.body.title) {
+            updateContent = req.body;
+        }
+        else {
+            updateContent = Object.assign(Object.assign({}, JSON.parse(req.body.book)), { imageUrl: (0, imageStorage_1.getImageUrl)(req) });
+        }
+        console.log("[UPDATE] update content is ", updateContent);
+        book_1.Book.findOneAndUpdate({ _id: bookId, userId: (_a = req.userId) === null || _a === void 0 ? void 0 : _a.userId }, updateContent).then((previousDocument) => {
+            if (previousDocument === null)
+                throw new Error(`DB did not aknowledge document update for book ${bookId}`);
+            console.log(`successfully updated book ${bookId} with content `, updateContent);
+            res
+                .status(201)
+                .json({ message: "successfully updated book with content " });
+            if (req.body.book) {
+                fs_1.default.unlink((0, imageStorage_1.getImagePath)(previousDocument.imageUrl), (err) => {
+                    if (err)
+                        console.log(`[ERROR] could not remove previous image 
+                ${(0, imageStorage_1.getImagePath)(previousDocument.imageUrl)}              
+              `);
+                });
+            }
+        }, (err) => {
+            throw new Error(err);
+        });
+    }
+    catch (err) {
+        console.log(`[ERROR] could not update book ${bookId} `, err);
+        res.status(500).json(err);
+    }
+}
+exports.updateBook = updateBook;

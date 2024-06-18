@@ -3,8 +3,8 @@ import { Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import "dotenv/config";
 
-export type authorizedRequest = Request & {
-  userId?: string | jwt.JwtPayload | undefined;
+export type AuthorizedRequest = Request & {
+  userId?: jwt.JwtPayload;
 };
 
 export function generateAccessToken(userId: String) {
@@ -14,7 +14,7 @@ export function generateAccessToken(userId: String) {
 }
 
 export function authenticateToken(
-  req: authorizedRequest,
+  req: AuthorizedRequest,
   res: Response,
   next: NextFunction
 ) {
@@ -28,14 +28,19 @@ export function authenticateToken(
 
   jwt.verify(token, process.env.TOKEN_SECRET as jwt.Secret, (err, userId) => {
     if (err) {
+      const redirectUrl = process.env.CLIENT_SERVER_HOST + "/Connexion";
       if (err.name === "TokenExpiredError") {
-        console.log("token expired redirecting");
-        res.redirect(401, "/Connexion");
+        console.log("[AUTH] token expired redirecting to ", redirectUrl);
+        res.redirect(401, redirectUrl);
+        return;
       }
-      console.log("[ERROR] auth middleware error ", err);
-      return res.status(401).json(err);
+      console.log("[ERROR] auth middleware error ", err.name);
+      console.log("redirecting to ", redirectUrl);
+      return res.redirect(401, redirectUrl);
     }
-    req.userId = userId;
+    if (!(typeof userId === "string") && !(typeof userId === "undefined")) {
+      req.userId = userId;
+    }
     next();
   });
 }

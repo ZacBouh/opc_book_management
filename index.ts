@@ -1,9 +1,15 @@
 import express from "express";
 import mongoose from "mongoose";
 import { createUser, getUsers, loginUser } from "./controllers/user";
-import { getBook, getBooks, createBook, deleteBook } from "./controllers/books";
+import {
+  getBook,
+  getBooks,
+  createBook,
+  deleteBook,
+  updateBook,
+} from "./controllers/books";
 import { authenticateToken } from "./middlewares/auth";
-import { uploadBookImage } from "./middlewares/multer";
+import { uploadBookImage } from "./middlewares/fileStorage";
 import "dotenv/config";
 import cors from "cors";
 
@@ -19,7 +25,7 @@ mongoose
 
 app.use(
   cors({
-    origin: "http://localhost:3000",
+    origin: process.env.CLIENT_SERVER_HOST,
     optionsSuccessStatus: 200,
   })
 );
@@ -37,27 +43,23 @@ app.use(express.static(process.env.PICTURES_FOLDER_PATH as string));
 
 /* BOOKS ROUTES */
 
-app.get("/api/books", (req, res) => getBooks(res));
+app.get("/api/books", (_, res) => getBooks(res));
 
 app.get("/api/books/:bookId", getBook);
 
-app.delete("/api/books/:bookId", deleteBook);
+app.delete("/api/books/:bookId", authenticateToken, deleteBook);
 
 app.post("/api/books", authenticateToken, uploadBookImage, createBook);
+
+app.put("/api/books/:bookId", authenticateToken, uploadBookImage, updateBook);
 
 /* AUTH ROUTES */
 
 app.post("/api/auth/signup", (req, res) => {
-  console.log(
-    `sign up request received with ${req.body?.email} and ${req.body?.password}`
-  );
   createUser(req.body.email, req.body.password, res);
 });
 
 app.post("/api/auth/login", (req, res) => {
-  console.log(
-    `login request received with ${req.body?.email} and ${req.body?.password}`
-  );
   loginUser(req.body?.email, req.body?.password, res);
 });
 

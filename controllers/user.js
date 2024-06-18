@@ -14,15 +14,22 @@ function createUser(email, password, res) {
         console.log("received a signup request with no email or password");
         return;
     }
-    bcrypt_1.default.hash(password, 10, (err, hash) => {
-        if (err)
-            return res.status(400).json(err);
-        const newUser = new user_1.User({ email, password: hash });
-        newUser
-            .save()
-            .then(() => res.status(201).json({ message: "user created" }))
-            .catch((err) => res.status(400).json(err));
-    });
+    console.log(`create user request received with ${email} and ${password}`);
+    try {
+        bcrypt_1.default.hash(password, 10, (err, hash) => {
+            if (err)
+                return res.status(500).json(err);
+            const newUser = new user_1.User({ email, password: hash });
+            newUser
+                .save()
+                .then(() => res.status(201).json({ message: "user created" }))
+                .catch((err) => res.status(500).json(err));
+        });
+    }
+    catch (err) {
+        console.log("[ERROR] creating new user failed ", err);
+        res.status(500).json(err);
+    }
 }
 exports.createUser = createUser;
 function loginUser(email, password, res) {

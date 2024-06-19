@@ -1,6 +1,6 @@
 import express from "express";
 import mongoose from "mongoose";
-import { createUser, getUsers, loginUser } from "./controllers/user";
+import { createUser, loginUser } from "./controllers/user";
 import {
   getBook,
   getBooks,
@@ -10,19 +10,21 @@ import {
   rateBook,
 } from "./controllers/books";
 import { authenticateToken } from "./middlewares/auth";
-import { uploadBookImage } from "./middlewares/fileStorage";
+import { uploadBookImage, compressImage } from "./middlewares/fileStorage";
 import "dotenv/config";
 import cors from "cors";
+import dbConnect from "./controllers/db";
 
 const app = express();
 const port = 4000;
 
-mongoose
-  .connect(
-    `mongodb+srv://${process.env.DB_USERNAME}:${process.env.DB_PASSWORD}${process.env.DB_ADDRESS}`
-  )
-  .then(() => console.log("successfull connection to db test"))
-  .catch((er) => console.log("error connecting to db", er));
+dbConnect();
+app.listen(port, () =>
+  console.log(`listening on port ${port}
+`)
+);
+
+/* GLOBAL MIDDLEWARES */
 
 app.use(
   cors({
@@ -30,16 +32,12 @@ app.use(
     optionsSuccessStatus: 200,
   })
 );
-
 app.use(express.json());
-// app.use(express.urlencoded({extended : true}))
-app.use((req, res, next) => {
-  console.log("[REQUEST] received");
-  next();
-});
+
+/* ROUTING */
 
 app.get("/", (req, res) => {
-  res.send("Hello it works");
+  res.send("Hello, Backend Up!");
 });
 
 /* STATIC FILES */
@@ -54,9 +52,21 @@ app.get("/api/books/:bookId", getBook);
 
 app.delete("/api/books/:bookId", authenticateToken, deleteBook);
 
-app.post("/api/books", authenticateToken, uploadBookImage, createBook);
+app.post(
+  "/api/books",
+  authenticateToken,
+  uploadBookImage,
+  compressImage,
+  createBook
+);
 
-app.put("/api/books/:bookId", authenticateToken, uploadBookImage, updateBook);
+app.put(
+  "/api/books/:bookId",
+  authenticateToken,
+  uploadBookImage,
+  compressImage,
+  updateBook
+);
 
 app.post("/api/books/:bookId/rating", authenticateToken, rateBook);
 
@@ -69,21 +79,3 @@ app.post("/api/auth/signup", (req, res) => {
 app.post("/api/auth/login", (req, res) => {
   loginUser(req.body?.email, req.body?.password, res);
 });
-
-// app.get("/api/auth/users", (req, res) => {
-//   console.log("request for users");
-//   const getRequest = getUsers();
-//   getRequest
-//     .then((users) => res.status(201).json(users))
-//     .catch((error) => res.status(400).json(error));
-// });
-
-app.listen(port, () =>
-  console.log(`listening on port ${port}
-`)
-);
-
-// setInterval(
-//   () => console.log("server still up", new Date(Date.now()).toLocaleString()),
-//   5000
-// );

@@ -10,7 +10,6 @@ const fs_1 = __importDefault(require("fs"));
 function getBooks(res) {
     try {
         book_1.Book.find().then((results) => {
-            console.log("result of the book request ", results);
             res.status(200).json(results), res.status(500);
         }, (err) => {
             console.log("book find promise rejected ", err);
@@ -26,21 +25,23 @@ exports.getBooks = getBooks;
 function getBook(req, res) {
     const bookId = req.params.bookId;
     if (bookId === "bestrating") {
+        console.log("[INFO] request for 3 best books");
         try {
             book_1.Book.find()
                 .sort({ averageRating: 1 })
                 .limit(3)
                 .then((book) => {
                 res.status(200).json(book);
-                return console.log("3 best rated books ", book);
+                return console.log("3 best rated books ", book.length);
             }, (err) => {
                 console.log("[ERROR] could not retrieve 3 best books ", err);
                 return res.status(400).json(err);
             });
+            return;
         }
         catch (err) {
             console.log("[ERROR] could not treat bestrating request ", err);
-            res.status(500).json();
+            return res.status(500).json();
         }
     }
     console.log("book with id ", bookId, " requested");
@@ -59,7 +60,6 @@ function createBook(req, res) {
         return res.status(400).json("book information missing");
     if (!req.file)
         return res.status(400).json("image file missing");
-    console.log("[CREATE] request received with ", req.body);
     try {
         book_1.Book.create(Object.assign(Object.assign({}, JSON.parse(req.body.book)), { 
             // ratings: [],

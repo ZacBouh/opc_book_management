@@ -27,13 +27,27 @@ export function getBook(req: Request, res: Response) {
   const bookId = req.params.bookId;
 
   if (bookId === "bestrating") {
-    Book.find().then((book) => res.status(200).json(book));
-
-    return console.log("[NOT IMPLEMENTED] request for best ratings");
+    try {
+      Book.find()
+        .sort({ averageRating: 1 })
+        .limit(3)
+        .then(
+          (book) => {
+            res.status(200).json(book);
+            return console.log("3 best rated books ", book);
+          },
+          (err) => {
+            console.log("[ERROR] could not retrieve 3 best books ", err);
+            return res.status(400).json(err);
+          }
+        );
+    } catch (err) {
+      console.log("[ERROR] could not treat bestrating request ", err);
+      res.status(500).json();
+    }
   }
 
   console.log("book with id ", bookId, " requested");
-
   Book.findOne({ _id: bookId }).then(
     (book) => {
       if (book == null)

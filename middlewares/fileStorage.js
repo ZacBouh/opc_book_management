@@ -7,7 +7,7 @@ exports.uploadBookImage = void 0;
 const multer_1 = __importDefault(require("multer"));
 require("dotenv/config");
 const storage = multer_1.default.diskStorage({
-    destination: (req, file, cb) => {
+    destination: (_req, _file, cb) => {
         cb(null, process.env.PICTURES_FOLDER_PATH);
     },
     filename: (req, file, cb) => {

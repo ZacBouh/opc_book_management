@@ -4,7 +4,7 @@ import { JwtPayload } from "jsonwebtoken";
 import "dotenv/config";
 
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
+  destination: (_req, _file, cb) => {
     cb(null, process.env.PICTURES_FOLDER_PATH as string);
   },
   filename: (req, file, cb) => {

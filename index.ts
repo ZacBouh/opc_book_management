@@ -1,5 +1,4 @@
 import express from "express";
-import mongoose from "mongoose";
 import { createUser, loginUser } from "./controllers/user";
 import {
   getBook,
@@ -19,6 +18,7 @@ const app = express();
 const port = 4000;
 
 dbConnect();
+
 app.listen(port, () =>
   console.log(`listening on port ${port}
 `)

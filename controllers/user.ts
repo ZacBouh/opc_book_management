@@ -21,6 +21,8 @@ export function createUser(email: string, password: string, res: Response) {
         .then(
           () => res.status(201).json({ message: "user created" }),
           (err) => {
+            console.log("user not created : ");
+            console.log(err);
             res.status(400).json(err);
           }
         )
@@ -57,7 +59,7 @@ export function loginUser(email: string, password: string, res: Response) {
         }
         if (!result) {
           console.log("wrong password");
-          res.status(401).json({ message: "wrong password" });
+          return res.status(401).json({ message: "wrong password" });
         }
         console.log(`${email} successfully logged in`);
         console.log("user id is : ", user._id);
